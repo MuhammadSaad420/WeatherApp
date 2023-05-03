@@ -7,6 +7,7 @@ import android.content.Intent
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Looper
 import android.provider.Settings
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -48,6 +49,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getLocationWeatherDetails() {
+        if(Constants.isNetworkAvailable(this)) {
+            Toast.makeText(this,"Internet is available",Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this,"Internet is not available",Toast.LENGTH_SHORT).show()
+        }
+    }
     @SuppressLint("MissingPermission")
     private fun getUserCurrentLocation() {
         val locationRequest = LocationRequest()
@@ -57,8 +65,9 @@ class MainActivity : AppCompatActivity() {
         fusedLocationClient.requestLocationUpdates(locationRequest, object: LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 val location = locationResult.lastLocation;
+                getLocationWeatherDetails()
             }
-   }, null)
+   }, Looper.myLooper())
     }
 
     private fun showActivatePermissionDialogPrompt() {
