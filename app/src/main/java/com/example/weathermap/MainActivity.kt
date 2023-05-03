@@ -5,6 +5,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.SharedPreferences
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
@@ -20,6 +21,7 @@ import com.example.weathermap.databinding.ActivityMainBinding
 import com.example.weathermap.models.WeatherResponse
 import com.example.weathermap.network.WeatherService
 import com.google.android.gms.location.*
+import com.google.gson.Gson
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
@@ -33,12 +35,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var customProgressDialog: Dialog? = null
     private var binding: ActivityMainBinding? = null
+    private lateinit var mSharedPreference: SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding!!.root)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
+        mSharedPreference = this.getSharedPreferences("Weather", Context.MODE_PRIVATE)
         if(isLocationEnabled()) {
             Dexter.withContext(this).withPermissions(android.Manifest.permission.ACCESS_FINE_LOCATION,
                 android.Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -79,7 +82,10 @@ class MainActivity : AppCompatActivity() {
                 override fun onResponse(response: Response<WeatherResponse>?, retrofit: Retrofit?) {
                     if(response!!.isSuccess) {
                         hideProgressDialog()
-                        setupUI(weatherList = response.body())
+                        val editor = mSharedPreference.edit()
+                        val weatherResponceString = Gson().toJson(response.body())
+                        editor.putString("weather_key",weatherResponceString)
+                        setupUI()
                     } else {
                         when(response.code()) {
                             400 -> {
@@ -148,12 +154,11 @@ class MainActivity : AppCompatActivity() {
     private fun hideProgressDialog() {
         customProgressDialog!!.hide()
     }
-    private fun setupUI(weatherList: WeatherResponse) {
+    private fun setupUI() {
 
-        // For loop to get the required data. And all are populated in the UI.
+        val weatherResponseString= mSharedPreference.getString("weather_key","");
+        val weatherList = Gson().fromJson(weatherResponseString,WeatherResponse::class.java)
         for (z in weatherList.weather.indices) {
-            Log.i("NAMEEEEEEEE", weatherList.weather[z].main)
-
             binding?.tvMain?.text = weatherList.weather[z].main
             binding?.tvMainDescription?.text = weatherList.weather[z].description
             binding?.tvTemp?.text =
