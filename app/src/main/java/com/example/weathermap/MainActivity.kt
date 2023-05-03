@@ -1,6 +1,7 @@
 package com.example.weathermap
 
 import android.annotation.SuppressLint
+import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
@@ -25,6 +26,7 @@ import retrofit.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var customProgressDialog: Dialog? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -64,9 +66,11 @@ class MainActivity : AppCompatActivity() {
                 longitude = longitude,
                 units = Constants.METRIC_UNIT
             , appid = Constants.API_KEY)
+            showCustomProgressDialog()
             weatherServiceCall.enqueue(object:Callback<WeatherResponse>{
                 override fun onResponse(response: Response<WeatherResponse>?, retrofit: Retrofit?) {
                     if(response!!.isSuccess) {
+                        hideProgressDialog()
                         Log.e("Responce", response.body().toString())
                     } else {
                         when(response.code()) {
@@ -81,9 +85,11 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                     }
+
                 }
 
                 override fun onFailure(t: Throwable?) {
+                    hideProgressDialog()
                     Log.e("Error", t!!.message.toString())
                 }
 
@@ -125,6 +131,14 @@ class MainActivity : AppCompatActivity() {
         val lm: LocationManager =
             applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager;
         return lm.isProviderEnabled(LocationManager.GPS_PROVIDER) || lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+    private fun showCustomProgressDialog() {
+       customProgressDialog = Dialog(this@MainActivity)
+       customProgressDialog!!.setContentView(R.layout.dialog_custom_progress)
+        customProgressDialog!!.show()
+    }
+    private fun hideProgressDialog() {
+        customProgressDialog!!.hide()
     }
 }
 
