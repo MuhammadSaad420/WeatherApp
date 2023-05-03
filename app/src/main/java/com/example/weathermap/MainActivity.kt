@@ -59,8 +59,6 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun getUserCurrentLocation() {
         val locationRequest = LocationRequest()
-        locationRequest.interval = 2000
-        locationRequest.fastestInterval = 1000
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         fusedLocationClient.requestLocationUpdates(locationRequest, object: LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
