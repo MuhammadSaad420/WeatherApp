@@ -14,6 +14,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.example.weathermap.databinding.ActivityMainBinding
 import com.example.weathermap.models.WeatherResponse
 import com.example.weathermap.network.WeatherService
 import com.google.android.gms.location.*
@@ -23,14 +24,19 @@ import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import retrofit.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var customProgressDialog: Dialog? = null
+    private var binding: ActivityMainBinding? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding!!.root)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
         if(isLocationEnabled()) {
             Dexter.withContext(this).withPermissions(android.Manifest.permission.ACCESS_FINE_LOCATION,
                 android.Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -71,7 +77,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onResponse(response: Response<WeatherResponse>?, retrofit: Retrofit?) {
                     if(response!!.isSuccess) {
                         hideProgressDialog()
-                        Log.e("Response", response.body().toString())
+                        setupUI(weatherList = response.body())
                     } else {
                         when(response.code()) {
                             400 -> {
@@ -139,6 +145,46 @@ class MainActivity : AppCompatActivity() {
     }
     private fun hideProgressDialog() {
         customProgressDialog!!.hide()
+    }
+    private fun setupUI(weatherList: WeatherResponse) {
+
+        // For loop to get the required data. And all are populated in the UI.
+        for (z in weatherList.weather.indices) {
+            Log.i("NAMEEEEEEEE", weatherList.weather[z].main)
+
+            binding?.tvMain?.text = weatherList.weather[z].main
+            binding?.tvMainDescription?.text = weatherList.weather[z].description
+            binding?.tvTemp?.text =
+                weatherList.main.temp.toString() + getUnit(application.resources.configuration.locales.toString())
+            binding?.tvHumidity?.text = weatherList.main.humidity.toString() + " per cent"
+            binding?.tvMin?.text = weatherList.main.temp_min.toString() + " min"
+            binding?.tvMax?.text = weatherList.main.temp_max.toString() + " max"
+            binding?.tvSpeed?.text = weatherList.wind.speed.toString()
+            binding?.tvName?.text = weatherList.name
+            binding?.tvCountry?.text = weatherList.sys.country
+            binding?.tvSunriseTime?.text = unixTime(weatherList.sys.sunrise.toLong())
+            binding?.tvSunsetTime?.text = unixTime(weatherList.sys.sunset.toLong())
+
+
+
+        }
+    }
+
+
+    private fun getUnit(value: String): String? {
+        var value = "°C"
+        if ("US" == value || "LR" == value || "MM" == value) {
+            value = "°F"
+        }
+        return value
+    }
+
+    private fun unixTime(timex: Long): String? {
+        val date = Date(timex * 1000L)
+        @SuppressLint("SimpleDateFormat") val sdf =
+            SimpleDateFormat("HH:mm", Locale.UK)
+        sdf.timeZone = TimeZone.getDefault()
+        return sdf.format(date)
     }
 }
 
