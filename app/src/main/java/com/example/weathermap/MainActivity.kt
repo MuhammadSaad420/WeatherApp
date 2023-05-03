@@ -9,15 +9,19 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.example.weathermap.models.WeatherResponse
+import com.example.weathermap.network.WeatherService
 import com.google.android.gms.location.*
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
+import retrofit.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -49,9 +53,41 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getLocationWeatherDetails() {
+    private fun getLocationWeatherDetails(latitude: Double, longitude:Double) {
         if(Constants.isNetworkAvailable(this)) {
-            Toast.makeText(this,"Internet is available",Toast.LENGTH_SHORT).show()
+            val retrofit = Retrofit.Builder()
+                .baseUrl(Constants.BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+            val weatherService: WeatherService = retrofit.create(WeatherService::class.java)
+            val weatherServiceCall: Call<WeatherResponse> = weatherService.getWeather(latitude = latitude,
+                longitude = longitude,
+                units = Constants.METRIC_UNIT
+            , appid = Constants.API_KEY)
+            weatherServiceCall.enqueue(object:Callback<WeatherResponse>{
+                override fun onResponse(response: Response<WeatherResponse>?, retrofit: Retrofit?) {
+                    if(response!!.isSuccess) {
+                        Log.e("Responce", response.body().toString())
+                    } else {
+                        when(response.code()) {
+                            400 -> {
+
+                            }
+                            404 -> {
+
+                            }
+                            else -> {
+
+                            }
+                        }
+                    }
+                }
+
+                override fun onFailure(t: Throwable?) {
+                    Log.e("Error", t!!.message.toString())
+                }
+
+            })
         } else {
             Toast.makeText(this,"Internet is not available",Toast.LENGTH_SHORT).show()
         }
@@ -63,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         fusedLocationClient.requestLocationUpdates(locationRequest, object: LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 val location = locationResult.lastLocation;
-                getLocationWeatherDetails()
+                getLocationWeatherDetails(location!!.latitude,location!!.longitude)
             }
    }, Looper.myLooper())
     }
@@ -91,3 +127,5 @@ class MainActivity : AppCompatActivity() {
         return lm.isProviderEnabled(LocationManager.GPS_PROVIDER) || lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
     }
 }
+
+
