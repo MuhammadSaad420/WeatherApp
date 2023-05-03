@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onResponse(response: Response<WeatherResponse>?, retrofit: Retrofit?) {
                     if(response!!.isSuccess) {
                         hideProgressDialog()
-                        Log.e("Responce", response.body().toString())
+                        Log.e("Response", response.body().toString())
                     } else {
                         when(response.code()) {
                             400 -> {
